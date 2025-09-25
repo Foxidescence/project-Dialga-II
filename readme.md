@@ -71,6 +71,27 @@ def create_user_command(username, password):
     create_user(username, password)
     print(f'{username} created!')
 
+@user_cli.cli.command("create-shift")
+def create_shift_command():
+    create_shift()
+    print(f'Shift created: {new_shift.get_json()}')
+
+@user_cli.cli.command("view-shift-reports")
+def view_shift_report():
+    view_shift_report(staff,today,one_week_later)
+    print(f'Shift reports for {staff.name}:')
+
+@user_cli.cli.command("view-staff-roster")
+def view_staff_roster():
+    get_all_shifts(today,one_week_later)
+    print(shift.get_json())
+
+@user_cli.cli.command("log-time")
+def log_time():
+    log_time_in(shift,time_in)
+    log_time_out(shift,time_out)
+    print(f'Time in logged: {updated_shift.get_json()}')
+    print(f'Time out logged: {updated_shift.get_json()}')
 app.cli.add_command(user_cli) # add the group to the cli
 
 ```
