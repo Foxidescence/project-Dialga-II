@@ -78,7 +78,7 @@ Then execute the command invoking with flask cli with command name and the relev
 ```bash
 $ flask user create bob bobpass
 ```
-##Admin Commands
+## Admin Commands
 
 Command to create a shift:
 Command: flask create-shift
@@ -91,7 +91,7 @@ Command: flask view-shift-reports
 (User enters the staff member that they want to see the shift report on)
 Error handling: code ensures that only an admin can create the shift; if a staff member has no shifts, no records are shown and program continues
 
-##Staff Commands
+## Staff Commands
 
 Command to View the Staff Roster
 Command: flask view-roster
