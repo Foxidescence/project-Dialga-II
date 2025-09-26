@@ -1,13 +1,43 @@
 import click, pytest, sys
 from flask.cli import with_appcontext, AppGroup
 import datetime
+import re 
 
 from App.database import db, get_migrate
 from App.models import (User,Shift,Staff,Admin)
 from App.main import create_app
 from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize )
 
+def clean_time_input(time_str):
+    """Cleans and validates time input in HH:MM format."""
+    time_str=re.sub(r'[^\d:]', ':',time_str.strip()) #replace non-colon separator with a colon
+    
+    parts=time_str.split(':') #split string into parts
+    if len(parts)==2:
+        hour=parts[0]
+        minute=parts[1]
 
+        if len(hour)==1:
+            hour='0'+hour #add leading zero to hour if single digit
+
+        time_str=f"{hour}:{minute}"
+
+    try:
+        datetime.datetime.strptime(time_str, '%H:%M') #validate time format
+        return time_str
+    except ValueError:
+        return None
+    
+def clean_date_input(date_str):
+    """Cleans and validates date input in YYYY-MM-DD format."""
+    
+    date_str=re.sub(r'[^\d-]', '-',date_str.strip()) #replace non-dash separator with a dash
+    
+    try:
+        date_obj=datetime.datetime.strptime(date_str, '%Y-%m-%d') #validate date format
+        return date_obj.strftime('%Y-%m-%d') #return cleaned date string
+    except ValueError:
+        return None
 # This commands file allow you to create convenient CLI commands for testing controllers
 
 app = create_app()
@@ -70,9 +100,30 @@ def create_shift():
         print("Staff member not found.")
         return
     
-    scheduled_time_in=input("Enter the scheduled time in (HH:MM): ")
-    scheduled_time_out=input("Enter the scheduled time out (HH:MM): ")
-    date=input("Enter the date (YYYY-MM-DD): ") #enter shift information
+    while True:
+        scheduled_time_in_raw=input("Enter the scheduled time in (HH:MM): ")
+        scheduled_time_in=clean_time_input(scheduled_time_in_raw)
+        if scheduled_time_in:
+            break
+        else:
+            print("Invalid time format. Please enter time in HH:MM format.")
+    
+    while True:
+        scheduled_time_out_raw=input("Enter the scheduled time out (HH:MM): ")
+        scheduled_time_out=clean_time_input(scheduled_time_out_raw)
+        if scheduled_time_out:
+            break
+        else:
+            print("Invalid time format. Please enter time in HH:MM format.")
+    
+    while True:
+        date_raw=input("Enter the date (YYYY-MM-DD): ") #enter shift information
+        date=clean_date_input(date_raw)
+        if date:
+            break
+        else:
+            print("Invalid date format. Please enter date in YYYY-MM-DD format.")
+
     shift={
         'scheduled_time_in':scheduled_time_in,
         'scheduled_time_out':scheduled_time_out,
@@ -186,12 +237,24 @@ def log_time():
     action=input("Enter 'in' to log time in or 'out' to log time out: ").lower() #ensure input is lowercase
     try:
         if action=='in':
-            time_in_str=input("Enter the time in (HH:MM): ")
+            while True:
+                time_in_str_raw=input("Please log your time in (HH:MM): ")
+                time_in_str=clean_time_input(time_in_str_raw)
+                if time_in_str:
+                    break
+                else:
+                    print("Invalid time format. Please enter time in HH:MM format.")
             time_in=datetime.datetime.strptime(time_in_str, '%H:%M').time() #convert the time string to a time object
             updated_shift=staff_member.log_time_in(shift,time_in) #log the time in for the shift
             print(f'Time in logged: {updated_shift.get_json()}')
         elif action=='out':
-            time_out_str=input("Enter the time out (HH:MM): ")
+            while True:
+                time_out_str_raw=input("Please log your time out (HH:MM): ")
+                time_out_str=clean_time_input(time_out_str_raw)
+                if time_out_str:
+                    break
+                else:
+                    print("Invalid time format. Please enter time in HH:MM format.")
             time_out=datetime.datetime.strptime(time_out_str, '%H:%M').time() #convert the time string to a time object
             updated_shift=staff_member.log_time_out(shift,time_out) #log the time out for the shift
             print(f'Time out logged: {updated_shift.get_json()}')
@@ -212,11 +275,11 @@ user_cli = AppGroup('user', help='User object commands')
 @click.argument("password", default="robpass")
 @click.argument("role", default="staff")
 @click.argument("name", default=None, required=False)
-def create_user_command(username, password,role):
-    create_user(username, password,role)
+def create_user_command(username,password,role,name):
+    create_user(username,password,role,name)
     print(f'{username} created!')
 
-# this command will be : flask user create bob bobpass
+# this command will be : flask user create bob bobpass admin Bob
 
 @user_cli.command("list", help="Lists users in the database")
 @click.argument("format", default="string")
