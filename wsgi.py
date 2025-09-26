@@ -3,7 +3,7 @@ from flask.cli import with_appcontext, AppGroup
 import datetime
 
 from App.database import db, get_migrate
-from App.models import (User,Shift,Staff)
+from App.models import (User,Shift,Staff,Admin)
 from App.main import create_app
 from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize )
 
@@ -20,20 +20,21 @@ def init():
     db.drop_all()
     db.create_all()
 
-    bob = User(username='bob', password='bobpass', role='admin')
-    sally = User(username='sally', password='sallypass', role='staff')
-    drake = User(username='drake', password='drakepass', role='staff')
+    bob=User(username='bob', password='bobpass')
+    sally=User(username='sally', password='sallypass')
+    drake=User(username='drake', password='drakepass')
 
     db.session.add_all([bob, sally, drake])
     db.session.commit()
 
-    sally_staff = Staff(id=sally.id,name='Sally')
-    drake_staff = Staff(id=drake.id,name='Drake')
+    bob_admin=Admin(id=bob.id,name='Bob')
+    sally_staff=Staff(id=sally.id,name='Sally')
+    drake_staff=Staff(id=drake.id,name='Drake')
 
-    db.session.add_all([sally_staff,drake_staff])
+    db.session.add_all([bob_admin,sally_staff,drake_staff])
     db.session.commit()
 
-    print('database intialized')
+    print('database intialized!')
 
 '''
 User Commands
@@ -44,12 +45,18 @@ def create_shift():
     users=User.query.all() #fetch all the users
     print("Available users:")
     for u in users:
-        print(f'ID: {u.id}, Username: {u.username}, Role: {u.role}') #print user details
+        role_status=""
+        if Admin.query.get(u.id):
+            role_status=" (Admin)"
+        elif Staff.query.get(u.id):
+            role_status=" (Staff)"
+        print(f'ID: {u.id}, Username: {u.username}{role_status}') #print user details
 
     user_id = input("Enter your user ID: ") #get the user to enter the ID of their user
-    user = User.query.get(user_id) #look up the User object from the database
-    if not user: 
-        print("User not found.") 
+
+    admin_user=Admin.query.get(user_id) #fetch the Admin object
+    if not admin_user: 
+        print("The selected user is not an admin, or does not exist.") 
         return
     
     all_staff=Staff.query.all() #fetch all the staff members
@@ -73,10 +80,8 @@ def create_shift():
     } #create a dictionary to hold the shift information
 
     try:
-        new_shift=user.schedule_shift(staff_obj,shift) #schedule the shift/creat the shift object
+        new_shift=admin_user.schedule_shift(staff_obj,shift) #schedule the shift/creat the shift object
         print(f'Shift created: {new_shift.get_json()}')
-    except PermissionError as e:
-        print(e) #print the error message if the user is not an admin
     except Exception as e:
         print(f'Error creating shift: {e}') #print any other error messages
 
@@ -90,13 +95,17 @@ def view_shift_reports():
     users=User.query.all() #fetch all the users, then show them
     print("Available users:")
     for u in users:
-        print(f'ID: {u.id}, Username: {u.username}, Role: {u.role}') #print user details
+        role_status=""
+        if Admin.query.get(u.id):
+            role_status=" (Admin)"
+        elif Staff.query.get(u.id):
+            role_status=" (Staff)"
+        print(f'ID: {u.id}, Username: {u.username}{role_status}') #print user details
     
     user_id=input("Enter your user ID: ")
-    user=User.query.get(user_id)
-
-    if not user: 
-        print("User not found.") 
+    admin_user=Admin.query.get(user_id)
+    if not admin_user: 
+        print("The selected user is not an admin, or does not exist.") 
         return
 
     all_staff=Staff.query.all()
@@ -106,13 +115,12 @@ def view_shift_reports():
 
     staff_id=input("Enter the ID of the staff member to view shift reports for: ")
     staff=Staff.query.get(staff_id)
-
     if not staff:
         print("Staff member not found.")
         return
     
     try:
-        reports=user.view_shift_report(staff,today,one_week_later) #view the shift reports for the staff member
+        reports=admin_user.view_shift_report(staff,today,one_week_later) #view the shift reports for the staff member
         if not reports:
             print("No shift reports found for {staff.name}.")
             return
@@ -121,8 +129,6 @@ def view_shift_reports():
             for report in reports: #iterate through and print each report
                 print(report)
                 print('---')
-    except PermissionError as e:
-        print(e) #print the error message if the user is not an admin
     except Exception as e:
         print(f'Error viewing shift reports: {e}')
 
@@ -204,8 +210,10 @@ user_cli = AppGroup('user', help='User object commands')
 @user_cli.command("create", help="Creates a user")
 @click.argument("username", default="rob")
 @click.argument("password", default="robpass")
-def create_user_command(username, password):
-    create_user(username, password)
+@click.argument("role", default="staff")
+@click.argument("name", default=None, required=False)
+def create_user_command(username, password,role):
+    create_user(username, password,role)
     print(f'{username} created!')
 
 # this command will be : flask user create bob bobpass
