@@ -71,29 +71,6 @@ def create_user_command(username, password):
     create_user(username, password)
     print(f'{username} created!')
 
-@user_cli.cli.command("create-shift")
-def create_shift_command():
-    create_shift()
-    print(f'Shift created: {new_shift.get_json()}')
-
-@user_cli.cli.command("view-shift-reports")
-def view_shift_report():
-    view_shift_report(staff,today,one_week_later)
-    print(f'Shift reports for {staff.name}:')
-
-@user_cli.cli.command("view-staff-roster")
-def view_staff_roster():
-    get_all_shifts(today,one_week_later)
-    print(shift.get_json())
-
-@user_cli.cli.command("log-time")
-def log_time():
-    log_time_in(shift,time_in)
-    log_time_out(shift,time_out)
-    print(f'Time in logged: {updated_shift.get_json()}')
-    print(f'Time out logged: {updated_shift.get_json()}')
-app.cli.add_command(user_cli) # add the group to the cli
-
 ```
 
 Then execute the command invoking with flask cli with command name and the relevant parameters
@@ -101,6 +78,28 @@ Then execute the command invoking with flask cli with command name and the relev
 ```bash
 $ flask user create bob bobpass
 ```
+##Admin Commands
+
+Command to create a shift:
+Command: flask create-shift
+(User enters the information of the shift (time_in,time_out,date))
+Error handling: code was written to ensure that only an admin can create the shift,and that
+time and date parameters only accept those formats.
+
+Command to View Shift Reports
+Command: flask view-shift-reports
+(User enters the staff member that they want to see the shift report on)
+Error handling: code ensures that only an admin can create the shift; if a staff member has no shifts, no records are shown and program continues
+
+##Staff Commands
+
+Command to View the Staff Roster
+Command: flask view-roster
+
+Command to actual log time in/time out
+Command: flask log-time
+(User enters chooses staff member and shift to edit, then chooses to edit time in/time out)
+Error handling: code ensures user doesn't enter incorrect information
 
 
 # Running the Project
