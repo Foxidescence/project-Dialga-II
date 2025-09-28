@@ -23,7 +23,7 @@ def clean_time_input(time_str):
         time_str=f"{hour}:{minute}"
 
     try:
-        datetime.datetime.strptime(time_str, '%H:%M') #validate time format
+        datetime.datetime.strptime(time_str,'%H:%M') #validate time format
         return time_str
     except ValueError:
         return None
@@ -34,7 +34,7 @@ def clean_date_input(date_str):
     date_str=re.sub(r'[^\d-]', '-',date_str.strip()) #replace non-dash separator with a dash
     
     try:
-        date_obj=datetime.datetime.strptime(date_str, '%Y-%m-%d') #validate date format
+        date_obj=datetime.datetime.strptime(date_str,'%Y-%m-%d') #validate date format
         return date_obj.strftime('%Y-%m-%d') #return cleaned date string
     except ValueError:
         return None

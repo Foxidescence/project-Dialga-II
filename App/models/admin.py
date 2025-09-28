@@ -3,8 +3,8 @@ from .shift import Shift
 #from .user import User
 
 class Admin(db.Model):
-    id=db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    name=db.Column(db.String(50), nullable=True)
+    id=db.Column(db.Integer, db.ForeignKey('user.id'),primary_key=True)
+    name=db.Column(db.String(50),nullable=True)
 
     user=db.relationship('User', backref=db.backref('admin', uselist=False)) #one-to-one relationship with User
 
@@ -24,7 +24,7 @@ class Admin(db.Model):
         db.session.commit() #commit the changes to the database
         return new_shift
     
-    def view_shift_report(self,staff,start_date=None, end_date=None): #function to view a shift report for the week
+    def view_shift_report(self,staff,start_date=None,end_date=None): #function to view a shift report for the week
         query=Shift.query.filter_by(staff_id=staff.id) #query to get all shifts for the staff member
 
         if start_date and end_date:
